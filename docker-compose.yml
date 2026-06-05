@@ -1,0 +1,26 @@
+# InduGate 一键启动（推荐）
+# 用法: docker compose up -d
+#
+# 包含：Gateway + Web 管理面板 + 内置模拟器（OPC UA / Modbus / MQTT）
+# 数据存储：SQLite（无需额外数据库）
+
+services:
+  indugate:
+    build:
+      context: .
+      dockerfile: deployments/docker/Dockerfile
+    container_name: indugate
+    ports:
+      - "8080:8080"
+    volumes:
+      - indugate_data:/app/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+
+volumes:
+  indugate_data:

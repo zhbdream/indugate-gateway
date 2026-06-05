@@ -1,3 +1,6 @@
+# InduGate 完整部署栈（Gateway + PostgreSQL + InfluxDB + Mosquitto）
+# 用法: docker compose -f deployments/docker/docker-compose.yml up -d
+
 services:
   gateway:
     build:
@@ -12,9 +15,12 @@ services:
       INDUGATE_LOG_FORMAT: json
       INDUGATE_DATABASE_DRIVER: postgres
       INDUGATE_DATABASE_DSN: "host=postgres user=indugate password=indugate123 dbname=indugate port=5432 sslmode=disable TimeZone=Asia/Shanghai"
+      INDUGATE_WEB_STATIC_DIR: /app/web/dist
+      INDUGATE_SIMULATOR_OPCUA_AUTO_START: "true"
+      INDUGATE_SIMULATOR_MODBUS_AUTO_START: "true"
+      INDUGATE_SIMULATOR_MQTT_AUTO_START: "true"
     volumes:
       - gateway_data:/app/data
-      - ../../configs:/app/configs:ro
     depends_on:
       postgres:
         condition: service_healthy

@@ -38,11 +38,37 @@ func main() {
 
 	driverManager := service.NewDriverManager()
 	simulatorService := service.NewSimulatorService(log, cfg.Simulator)
+	deviceService := service.NewDeviceService(db, driverManager)
 
-	router := api.NewRouter(cfg, log, db, api.RouterDeps{
+	if cfg.Bootstrap.Enabled {
+		bootstrap := service.NewBootstrapService(log, db, deviceService)
+		if err := bootstrap.LoadDevicesFile(context.Background(), cfg.Bootstrap.DevicesFile); err != nil {
+			log.Warn("failed to bootstrap devices", zap.Error(err))
+		}
+	}
+
+	authService := service.NewAuthService(db, cfg.Auth)
+	if err := authService.EnsureDefaultAdmin(context.Background()); err != nil {
+		log.Warn("failed to bootstrap default admin", zap.Error(err))
+	}
+
+	router, cleanup, historyService, auditService, startMetrics := api.NewRouter(cfg, log, db, api.RouterDeps{
 		DriverManager:    driverManager,
 		SimulatorService: simulatorService,
 	})
+	defer cleanup()
+
+	metricsCtx, metricsCancel := context.WithCancel(context.Background())
+	defer metricsCancel()
+	startMetrics(metricsCtx)
+
+	retentionCtx, retentionCancel := context.WithCancel(context.Background())
+	historyService.StartRetentionJob(retentionCtx, log, cfg.History)
+	auditService.StartRetentionJob(retentionCtx, log, cfg.Audit)
+
+	if cfg.Auth.Enabled {
+		log.Info("API authentication enabled")
+	}
 
 	addr := fmt.Sprintf("%s:%d", cfg.Server.Host, cfg.Server.Port)
 	srv := &http.Server{
@@ -67,6 +93,8 @@ func main() {
 	<-quit
 
 	log.Info("shutting down server...")
+	retentionCancel()
+
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 

@@ -40,14 +40,26 @@ clean: ## Remove build artifacts
 docker-build: ## Build Docker image
 	docker build -f deployments/docker/Dockerfile -t indugate/gateway:$(VERSION) .
 
-docker-up: ## Start all services via Docker Compose
-	docker compose -f deployments/docker/docker-compose.yml up -d
+docker-up: ## Start all-in-one via Docker Compose (recommended)
+	docker compose up -d --build
 
-docker-down: ## Stop all Docker Compose services
+docker-up-full: ## Start full stack (Gateway + PostgreSQL + InfluxDB + Mosquitto)
+	docker compose -f deployments/docker/docker-compose.yml up -d --build
+
+docker-down: ## Stop Docker Compose services
+	docker compose down
+
+docker-down-full: ## Stop full stack
 	docker compose -f deployments/docker/docker-compose.yml down
 
-docker-logs: ## Tail gateway container logs
-	docker compose -f deployments/docker/docker-compose.yml logs -f gateway
+docker-logs: ## Tail container logs
+	docker compose logs -f
+
+web-dev: ## Start frontend dev server
+	cd web && npm run dev
+
+web-build: ## Build frontend for production
+	cd web && npm run build
 
 dev: deps run ## Install deps and run locally
 

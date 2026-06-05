@@ -10,11 +10,12 @@ import (
 )
 
 type DeviceHandler struct {
-	svc *service.DeviceService
+	svc  *service.DeviceService
+	perm *service.DevicePermissionService
 }
 
-func NewDeviceHandler(svc *service.DeviceService) *DeviceHandler {
-	return &DeviceHandler{svc: svc}
+func NewDeviceHandler(svc *service.DeviceService, perm *service.DevicePermissionService) *DeviceHandler {
+	return &DeviceHandler{svc: svc, perm: perm}
 }
 
 type createDeviceRequest struct {
@@ -27,6 +28,11 @@ type createDeviceRequest struct {
 
 func (h *DeviceHandler) List(c *gin.Context) {
 	devices, err := h.svc.List(c.Request.Context())
+	if err != nil {
+		response.InternalError(c, err.Error())
+		return
+	}
+	devices, err = filterDevicesByAccess(c, h.perm, devices)
 	if err != nil {
 		response.InternalError(c, err.Error())
 		return
@@ -44,6 +50,9 @@ func (h *DeviceHandler) Get(c *gin.Context) {
 	device, err := h.svc.Get(c.Request.Context(), id)
 	if err != nil {
 		response.NotFound(c, err.Error())
+		return
+	}
+	if !requireDeviceAccess(c, h.perm, device.ID) {
 		return
 	}
 	response.OK(c, device)
@@ -85,6 +94,10 @@ func (h *DeviceHandler) Update(c *gin.Context) {
 		return
 	}
 
+	if !requireDeviceAccess(c, h.perm, id) {
+		return
+	}
+
 	device, err := h.svc.Update(c.Request.Context(), id, &model.Device{
 		Name:        req.Name,
 		Protocol:    req.Protocol,
@@ -106,6 +119,10 @@ func (h *DeviceHandler) Delete(c *gin.Context) {
 		return
 	}
 
+	if !requireDeviceAccess(c, h.perm, id) {
+		return
+	}
+
 	if err := h.svc.Delete(c.Request.Context(), id); err != nil {
 		response.NotFound(c, err.Error())
 		return
@@ -117,6 +134,10 @@ func (h *DeviceHandler) Connect(c *gin.Context) {
 	id, err := parseID(c)
 	if err != nil {
 		response.BadRequest(c, "invalid device id")
+		return
+	}
+
+	if !requireDeviceAccess(c, h.perm, id) {
 		return
 	}
 
@@ -132,6 +153,10 @@ func (h *DeviceHandler) Disconnect(c *gin.Context) {
 	id, err := parseID(c)
 	if err != nil {
 		response.BadRequest(c, "invalid device id")
+		return
+	}
+
+	if !requireDeviceAccess(c, h.perm, id) {
 		return
 	}
 

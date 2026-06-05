@@ -7,6 +7,8 @@ import (
 	"sync"
 
 	"github.com/indugate/gateway/internal/config"
+	modbussim "github.com/indugate/gateway/internal/simulator/modbus"
+	mqttsim "github.com/indugate/gateway/internal/simulator/mqtt"
 	opcuasim "github.com/indugate/gateway/internal/simulator/opcua"
 	"go.uber.org/zap"
 )
@@ -14,19 +16,43 @@ import (
 type SimulatorService struct {
 	log     *zap.Logger
 	opcua   *opcuasim.Simulator
+	modbus  *modbussim.Simulator
+	mqtt    *mqttsim.Simulator
 	mu      sync.RWMutex
 	started map[string]bool
 }
 
 func NewSimulatorService(log *zap.Logger, cfg config.SimulatorConfig) *SimulatorService {
 	svc := &SimulatorService{
-		log:     log,
-		opcua:   opcuasim.NewSimulator(log, opcuasim.SimulatorConfig{Host: cfg.OPCUA.Host, Port: cfg.OPCUA.Port}),
+		log: log,
+		opcua: opcuasim.NewSimulator(log, opcuasim.SimulatorConfig{
+			Host: cfg.OPCUA.Host,
+			Port: cfg.OPCUA.Port,
+		}),
+		modbus: modbussim.NewSimulator(log, modbussim.SimulatorConfig{
+			Host: cfg.Modbus.Host,
+			Port: cfg.Modbus.Port,
+		}),
+		mqtt: mqttsim.NewSimulator(log, mqttsim.SimulatorConfig{
+			Host:   cfg.MQTT.Host,
+			Port:   cfg.MQTT.Port,
+			Topics: cfg.MQTT.Topics,
+		}),
 		started: make(map[string]bool),
 	}
 	if cfg.OPCUA.AutoStart {
 		if _, err := svc.Start("opcua"); err != nil {
 			log.Warn("failed to auto-start opc ua simulator", zap.Error(err))
+		}
+	}
+	if cfg.Modbus.AutoStart {
+		if _, err := svc.Start("modbus"); err != nil {
+			log.Warn("failed to auto-start modbus simulator", zap.Error(err))
+		}
+	}
+	if cfg.MQTT.AutoStart {
+		if _, err := svc.Start("mqtt"); err != nil {
+			log.Warn("failed to auto-start mqtt simulator", zap.Error(err))
 		}
 	}
 	return svc
@@ -37,6 +63,9 @@ func (s *SimulatorService) List() []map[string]any {
 	defer s.mu.RUnlock()
 
 	opcuaStatus := s.opcua.Status()
+	modbusStatus := s.modbus.Status()
+	mqttStatus := s.mqtt.Status()
+
 	return []map[string]any{
 		{
 			"type":        "opcua",
@@ -46,13 +75,17 @@ func (s *SimulatorService) List() []map[string]any {
 		},
 		{
 			"type":        "modbus",
-			"status":      "stopped",
-			"description": "Modbus TCP simulator (not implemented)",
+			"status":      statusString(s.started["modbus"]),
+			"description": "Modbus TCP simulator with holding registers and coils",
+			"endpoint":    modbusStatus.Endpoint,
+			"nodes":       modbusStatus.NodeIDs,
 		},
 		{
 			"type":        "mqtt",
-			"status":      "stopped",
-			"description": "MQTT simulator (not implemented)",
+			"status":      statusString(s.started["mqtt"]),
+			"description": "Embedded MQTT broker with auto telemetry publishing",
+			"endpoint":    mqttStatus.Endpoint,
+			"topics":      mqttStatus.Topics,
 		},
 	}
 }
@@ -73,6 +106,34 @@ func (s *SimulatorService) Start(simType string) (map[string]any, error) {
 			"endpoint": status.Endpoint,
 			"nodes":    status.NodeIDs,
 		}, nil
+	case "modbus":
+		s.mu.Lock()
+		defer s.mu.Unlock()
+		if err := s.modbus.Start(); err != nil {
+			return nil, err
+		}
+		s.started["modbus"] = true
+		status := s.modbus.Status()
+		return map[string]any{
+			"type":     simType,
+			"status":   "running",
+			"endpoint": status.Endpoint,
+			"nodes":    status.NodeIDs,
+		}, nil
+	case "mqtt":
+		s.mu.Lock()
+		defer s.mu.Unlock()
+		if err := s.mqtt.Start(); err != nil {
+			return nil, err
+		}
+		s.started["mqtt"] = true
+		status := s.mqtt.Status()
+		return map[string]any{
+			"type":     simType,
+			"status":   "running",
+			"endpoint": status.Endpoint,
+			"topics":   status.Topics,
+		}, nil
 	default:
 		return nil, fmt.Errorf("simulator type %q not implemented", simType)
 	}
@@ -88,6 +149,22 @@ func (s *SimulatorService) Stop(simType string) (map[string]any, error) {
 		}
 		s.started["opcua"] = false
 		return map[string]any{"type": simType, "status": "stopped"}, nil
+	case "modbus":
+		s.mu.Lock()
+		defer s.mu.Unlock()
+		if err := s.modbus.Stop(); err != nil {
+			return nil, err
+		}
+		s.started["modbus"] = false
+		return map[string]any{"type": simType, "status": "stopped"}, nil
+	case "mqtt":
+		s.mu.Lock()
+		defer s.mu.Unlock()
+		if err := s.mqtt.Stop(); err != nil {
+			return nil, err
+		}
+		s.started["mqtt"] = false
+		return map[string]any{"type": simType, "status": "stopped"}, nil
 	default:
 		return nil, fmt.Errorf("simulator type %q not implemented", simType)
 	}
@@ -100,6 +177,16 @@ func (s *SimulatorService) UpdateConfig(simType string, configJSON string) (map[
 			return nil, err
 		}
 		return map[string]any{"type": simType, "message": "config updated"}, nil
+	case "modbus":
+		if err := s.modbus.UpdateConfig(configJSON); err != nil {
+			return nil, err
+		}
+		return map[string]any{"type": simType, "message": "config updated"}, nil
+	case "mqtt":
+		if err := s.mqtt.UpdateConfig(configJSON); err != nil {
+			return nil, err
+		}
+		return map[string]any{"type": simType, "message": "config updated"}, nil
 	default:
 		return nil, fmt.Errorf("simulator type %q not implemented", simType)
 	}
@@ -109,6 +196,8 @@ func (s *SimulatorService) Shutdown(_ context.Context) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	_ = s.opcua.Stop()
+	_ = s.modbus.Stop()
+	_ = s.mqtt.Stop()
 }
 
 func statusString(running bool) string {

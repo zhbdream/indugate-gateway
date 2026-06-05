@@ -4,10 +4,10 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/glebarez/sqlite"
 	"github.com/indugate/gateway/internal/config"
 	"github.com/indugate/gateway/internal/model"
 	"go.uber.org/zap"
-	"github.com/glebarez/sqlite"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	gormlogger "gorm.io/gorm/logger"
@@ -49,7 +49,7 @@ func NewDB(cfg config.DatabaseConfig, log *zap.Logger) (*gorm.DB, error) {
 		sqlDB.SetConnMaxLifetime(time.Duration(cfg.ConnMaxLifetime) * time.Second)
 	}
 
-	if err := db.AutoMigrate(&model.Device{}); err != nil {
+	if err := db.AutoMigrate(&model.Device{}, &model.DataHistory{}, &model.AlertRule{}, &model.AlertEvent{}, &model.User{}, &model.AuditLog{}, &model.UserDevice{}); err != nil {
 		return nil, fmt.Errorf("auto migrate: %w", err)
 	}
 

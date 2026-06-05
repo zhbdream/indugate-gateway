@@ -1,13 +1,17 @@
 # Python Integration Example
 
-This directory will contain Python integration examples for connecting to InduGate via REST API and MCP.
+Run the example against a running InduGate instance:
 
-```python
-import requests
+```bash
+# Start gateway
+go run cmd/gateway/main.go
 
-BASE_URL = "http://localhost:8080/api/v1"
-
-# List devices
-resp = requests.get(f"{BASE_URL}/devices")
-print(resp.json())
+# Run example (requires Python 3.8+)
+python examples/python-integration/example.py
 ```
+
+Environment variables:
+
+- `INDUGATE_URL` — base URL (default: `http://localhost:8080`)
+
+The script demonstrates REST API calls (devices, dashboard stats) and MCP `list_devices`.

@@ -3,21 +3,28 @@ package handler
 import (
 	"errors"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/indugate/gateway/internal/api/response"
 	"github.com/indugate/gateway/internal/model"
+	bacnetdriver "github.com/indugate/gateway/internal/protocol/bacnet"
+	modbusdriver "github.com/indugate/gateway/internal/protocol/modbus"
+	mqttdriver "github.com/indugate/gateway/internal/protocol/mqtt"
 	opcuadriver "github.com/indugate/gateway/internal/protocol/opcua"
+	s7driver "github.com/indugate/gateway/internal/protocol/s7"
 	"github.com/indugate/gateway/internal/service"
 )
 
 type DeviceDataHandler struct {
-	devices *service.DeviceService
+	devices  *service.DeviceService
+	recorder *service.HistoryRecorder
+	perm     *service.DevicePermissionService
 }
 
-func NewDeviceDataHandler(devices *service.DeviceService) *DeviceDataHandler {
-	return &DeviceDataHandler{devices: devices}
+func NewDeviceDataHandler(devices *service.DeviceService, recorder *service.HistoryRecorder, perm *service.DevicePermissionService) *DeviceDataHandler {
+	return &DeviceDataHandler{devices: devices, recorder: recorder, perm: perm}
 }
 
 func (h *DeviceDataHandler) BrowseNodes(c *gin.Context) {
@@ -44,7 +51,7 @@ func (h *DeviceDataHandler) ReadData(c *gin.Context) {
 		return
 	}
 
-	nodeID := c.Param("nodeId")
+	nodeID := nodeIDFromRequest(c)
 	if nodeID == "" {
 		response.BadRequest(c, "node id is required")
 		return
@@ -54,6 +61,9 @@ func (h *DeviceDataHandler) ReadData(c *gin.Context) {
 	if err != nil {
 		handleDriverError(c, err)
 		return
+	}
+	if h.recorder != nil {
+		h.recorder.RecordRead(c.Request.Context(), device.ID, value)
 	}
 	response.OK(c, value)
 }
@@ -68,7 +78,7 @@ func (h *DeviceDataHandler) WriteData(c *gin.Context) {
 		return
 	}
 
-	nodeID := c.Param("nodeId")
+	nodeID := nodeIDFromRequest(c)
 	if nodeID == "" {
 		response.BadRequest(c, "node id is required")
 		return
@@ -88,8 +98,8 @@ func (h *DeviceDataHandler) WriteData(c *gin.Context) {
 }
 
 type subscribeRequest struct {
-	NodeIDs      []string `json:"node_ids" binding:"required"`
-	IntervalMS   int      `json:"interval_ms"`
+	NodeIDs    []string `json:"node_ids" binding:"required"`
+	IntervalMS int      `json:"interval_ms"`
 }
 
 func (h *DeviceDataHandler) Subscribe(c *gin.Context) {
@@ -97,11 +107,6 @@ func (h *DeviceDataHandler) Subscribe(c *gin.Context) {
 	if err != nil {
 		return
 	}
-	if device.Protocol != model.ProtocolOPCUA {
-		response.BadRequest(c, "subscription is only supported for opcua devices")
-		return
-	}
-
 	var req subscribeRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		response.BadRequest(c, err.Error())
@@ -132,6 +137,12 @@ func (h *DeviceDataHandler) PollSubscription(c *gin.Context) {
 		handleDriverError(c, err)
 		return
 	}
+	if h.recorder != nil {
+		ctx := c.Request.Context()
+		for _, evt := range events {
+			h.recorder.RecordEvent(ctx, deviceID, evt)
+		}
+	}
 	response.OK(c, events)
 }
 
@@ -156,6 +167,9 @@ func (h *DeviceDataHandler) ListSubscriptions(c *gin.Context) {
 		response.BadRequest(c, "invalid device id")
 		return
 	}
+	if !requireDeviceAccess(c, h.perm, deviceID) {
+		return
+	}
 
 	subs, err := h.devices.Drivers().ListSubscriptions(deviceID)
 	if err != nil {
@@ -177,16 +191,38 @@ func (h *DeviceDataHandler) loadDevice(c *gin.Context) (*model.Device, error) {
 		response.NotFound(c, err.Error())
 		return nil, err
 	}
+	if !requireDeviceAccess(c, h.perm, device.ID) {
+		return nil, service.ErrDeviceAccessDenied
+	}
 	return device, nil
+}
+
+func nodeIDFromRequest(c *gin.Context) string {
+	if node := c.Query("node"); node != "" {
+		return node
+	}
+	nodeID := c.Param("nodeId")
+	return strings.TrimPrefix(nodeID, "/")
 }
 
 func handleDriverError(c *gin.Context, err error) {
 	switch {
-	case errors.Is(err, service.ErrDeviceNotConnected), errors.Is(err, opcuadriver.ErrNotConnected):
+	case errors.Is(err, service.ErrDeviceNotConnected),
+		errors.Is(err, opcuadriver.ErrNotConnected),
+		errors.Is(err, modbusdriver.ErrNotConnected),
+		errors.Is(err, mqttdriver.ErrNotConnected),
+		errors.Is(err, s7driver.ErrNotConnected),
+		errors.Is(err, bacnetdriver.ErrNotConnected):
 		response.Fail(c, 409, 409, err.Error())
 	case errors.Is(err, service.ErrUnsupportedProtocol):
 		response.BadRequest(c, err.Error())
-	case errors.Is(err, opcuadriver.ErrSubscriptionNotFound):
+	case errors.Is(err, opcuadriver.ErrSubscriptionNotFound),
+		errors.Is(err, modbusdriver.ErrSubscriptionNotFound),
+		errors.Is(err, mqttdriver.ErrSubscriptionNotFound),
+		errors.Is(err, s7driver.ErrSubscriptionNotFound),
+		errors.Is(err, bacnetdriver.ErrSubscriptionNotFound):
+		response.NotFound(c, err.Error())
+	case errors.Is(err, mqttdriver.ErrTopicNotFound):
 		response.NotFound(c, err.Error())
 	default:
 		response.InternalError(c, err.Error())

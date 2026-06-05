@@ -21,8 +21,62 @@ mcp:
   enabled: true
   base_path: "/mcp"
 
+web:
+  static_dir: "./web/dist"
+
+bootstrap:
+  enabled: true
+  devices_file: "./configs/devices.yaml"
+
+influxdb:
+  enabled: false
+  url: "http://localhost:8086"
+  token: ""
+  org: "indugate"
+  bucket: "telemetry"
+
+history:
+  retention_days: 30
+  cleanup_interval_hours: 24
+
+alerts:
+  webhook_url: ""
+  mqtt_enabled: false
+  mqtt_broker: "tcp://localhost:1883"
+  mqtt_topic: "indugate/alerts"
+  mqtt_client_id: "indugate-alert-notifier"
+
+auth:
+  enabled: false
+  rbac_enabled: true
+  api_token: ""
+  jwt_secret: "change-me-in-production"
+  jwt_expire_hours: 24
+  default_admin_user: "admin"
+  default_admin_password: "admin123"
+  device_acl_enabled: false
+
+audit:
+  enabled: true
+  retention_days: 90
+  cleanup_interval_hours: 24
+
+metrics:
+  enabled: false
+
 simulator:
   opcua:
     host: "0.0.0.0"
     port: 4840
     auto_start: false
+  modbus:
+    host: "0.0.0.0"
+    port: 502
+    auto_start: false
+  mqtt:
+    host: "0.0.0.0"
+    port: 1883
+    auto_start: false
+    topics:
+      - "factory/device1/telemetry"
+      - "factory/device2/telemetry"

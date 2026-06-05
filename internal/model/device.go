@@ -21,6 +21,7 @@ const (
 	ProtocolModbus DeviceProtocol = "modbus"
 	ProtocolMQTT   DeviceProtocol = "mqtt"
 	ProtocolS7     DeviceProtocol = "s7"
+	ProtocolBACnet DeviceProtocol = "bacnet"
 )
 
 type Device struct {
