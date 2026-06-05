@@ -1,0 +1,86 @@
+services:
+  gateway:
+    build:
+      context: ../..
+      dockerfile: deployments/docker/Dockerfile
+    container_name: indugate-gateway
+    ports:
+      - "8080:8080"
+    environment:
+      INDUGATE_SERVER_MODE: release
+      INDUGATE_LOG_LEVEL: info
+      INDUGATE_LOG_FORMAT: json
+      INDUGATE_DATABASE_DRIVER: postgres
+      INDUGATE_DATABASE_DSN: "host=postgres user=indugate password=indugate123 dbname=indugate port=5432 sslmode=disable TimeZone=Asia/Shanghai"
+    volumes:
+      - gateway_data:/app/data
+      - ../../configs:/app/configs:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - indugate-net
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: indugate-postgres
+    environment:
+      POSTGRES_USER: indugate
+      POSTGRES_PASSWORD: indugate123
+      POSTGRES_DB: indugate
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U indugate -d indugate"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - indugate-net
+
+  influxdb:
+    image: influxdb:2.7-alpine
+    container_name: indugate-influxdb
+    ports:
+      - "8086:8086"
+    environment:
+      DOCKER_INFLUXDB_INIT_MODE: setup
+      DOCKER_INFLUXDB_INIT_USERNAME: indugate
+      DOCKER_INFLUXDB_INIT_PASSWORD: indugate123456
+      DOCKER_INFLUXDB_INIT_ORG: indugate
+      DOCKER_INFLUXDB_INIT_BUCKET: telemetry
+      DOCKER_INFLUXDB_INIT_ADMIN_TOKEN: indugate-dev-token
+    volumes:
+      - influxdb_data:/var/lib/influxdb2
+    restart: unless-stopped
+    networks:
+      - indugate-net
+
+  mosquitto:
+    image: eclipse-mosquitto:2
+    container_name: indugate-mosquitto
+    ports:
+      - "1883:1883"
+      - "9001:9001"
+    volumes:
+      - ./mosquitto/mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
+      - mosquitto_data:/mosquitto/data
+      - mosquitto_log:/mosquitto/log
+    restart: unless-stopped
+    networks:
+      - indugate-net
+
+volumes:
+  gateway_data:
+  postgres_data:
+  influxdb_data:
+  mosquitto_data:
+  mosquitto_log:
+
+networks:
+  indugate-net:
+    driver: bridge

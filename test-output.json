@@ -1,0 +1,232 @@
+﻿{
+    "health":  {
+                   "response":  {
+                                    "service":  "indugate-gateway",
+                                    "status":  "up"
+                                },
+                   "ok":  true
+               },
+    "sim_start":  {
+                      "response":  {
+                                       "endpoint":  "opc.tcp://127.0.0.1:4840",
+                                       "nodes":  [
+                                                     "ns=1;s=Temperature",
+                                                     "ns=1;s=Pressure",
+                                                     "ns=1;s=Flow",
+                                                     "ns=1;s=MotorSpeed",
+                                                     "ns=1;s=AlarmActive"
+                                                 ],
+                                       "status":  "running",
+                                       "type":  "opcua"
+                                   },
+                      "ok":  true
+                  },
+    "meta":  {
+                 "allNodes":  [
+                                  "ns=1;s=Temperature",
+                                  "ns=1;s=Pressure",
+                                  "ns=1;s=Flow",
+                                  "ns=1;s=MotorSpeed",
+                                  "ns=1;s=AlarmActive"
+                              ],
+                 "subId":  "323270f7-37a2-48ad-bff2-703fe2129c68",
+                 "tempNode":  "ns=1;s=Temperature",
+                 "endpoint":  "opc.tcp://127.0.0.1:4840",
+                 "pressureNode":  "ns=1;s=Pressure",
+                 "deviceId":  4
+             },
+    "create_device":  {
+                          "response":  {
+                                           "id":  4,
+                                           "name":  "Local Sim",
+                                           "protocol":  "opcua",
+                                           "address":  "opc.tcp://127.0.0.1:4840",
+                                           "config":  "",
+                                           "status":  "disconnected",
+                                           "description":  "OPC UA test",
+                                           "created_at":  "2026-06-05T16:08:48.2026528+08:00",
+                                           "updated_at":  "2026-06-05T16:08:48.2026528+08:00"
+                                       },
+                          "ok":  true
+                      },
+    "connect":  {
+                    "response":  {
+                                     "id":  4,
+                                     "name":  "Local Sim",
+                                     "protocol":  "opcua",
+                                     "address":  "opc.tcp://127.0.0.1:4840",
+                                     "config":  "",
+                                     "status":  "connected",
+                                     "description":  "OPC UA test",
+                                     "created_at":  "2026-06-05T16:08:48.2026528+08:00",
+                                     "updated_at":  "2026-06-05T16:08:48.2166067+08:00"
+                                 },
+                    "ok":  true
+                },
+    "browse":  {
+                   "response":  [
+                                    {
+                                        "node_id":  "i=31915",
+                                        "browse_name":  "Locations",
+                                        "display_name":  "Locations",
+                                        "node_class":  "Object",
+                                        "writable":  false,
+                                        "path":  "Locations",
+                                        "has_children":  true
+                                    },
+                                    {
+                                        "node_id":  "i=2253",
+                                        "browse_name":  "Server",
+                                        "display_name":  "Server",
+                                        "node_class":  "Object",
+                                        "writable":  false,
+                                        "path":  "Server",
+                                        "has_children":  true
+                                    },
+                                    {
+                                        "node_id":  "i=23470",
+                                        "browse_name":  "Aliases",
+                                        "display_name":  "Aliases",
+                                        "node_class":  "Object",
+                                        "writable":  false,
+                                        "path":  "Aliases",
+                                        "has_children":  true
+                                    }
+                                ],
+                   "ok":  true
+               },
+    "read_before":  {
+                        "response":  {
+                                         "node_id":  "ns=1;s=Temperature",
+                                         "value":  0,
+                                         "status":  "The operation succeeded. StatusGood (0x0)",
+                                         "timestamp":  "2026-06-05T16:08:48.2323084+08:00"
+                                     },
+                        "ok":  true
+                    },
+    "write":  {
+                  "response":  {
+                                   "node_id":  "ns=1;s=Temperature",
+                                   "value":  55.5
+                               },
+                  "ok":  true
+              },
+    "read_after":  {
+                       "response":  {
+                                        "node_id":  "ns=1;s=Temperature",
+                                        "value":  55.5,
+                                        "status":  "The operation succeeded. StatusGood (0x0)",
+                                        "timestamp":  "2026-06-05T16:08:48.2359137+08:00"
+                                    },
+                       "ok":  true
+                   },
+    "subscribe":  {
+                      "response":  {
+                                       "id":  "323270f7-37a2-48ad-bff2-703fe2129c68",
+                                       "device_id":  4,
+                                       "node_ids":  [
+                                                        "ns=1;s=Temperature",
+                                                        "ns=1;s=Pressure"
+                                                    ],
+                                       "interval":  "500ms",
+                                       "created_at":  "2026-06-05T16:08:48.2439934+08:00"
+                                   },
+                      "ok":  true
+                  },
+    "poll_events":  {
+                        "response":  [
+                                         {
+                                             "subscription_id":  "323270f7-37a2-48ad-bff2-703fe2129c68",
+                                             "node_id":  "ns=1;s=Temperature",
+                                             "value":  55.5,
+                                             "status":  "The operation succeeded. StatusGood (0x0)",
+                                             "timestamp":  "2026-06-05T16:08:48.7444475+08:00"
+                                         },
+                                         {
+                                             "subscription_id":  "323270f7-37a2-48ad-bff2-703fe2129c68",
+                                             "node_id":  "ns=1;s=Pressure",
+                                             "value":  0,
+                                             "status":  "The operation succeeded. StatusGood (0x0)",
+                                             "timestamp":  "2026-06-05T16:08:48.7444475+08:00"
+                                         },
+                                         {
+                                             "subscription_id":  "323270f7-37a2-48ad-bff2-703fe2129c68",
+                                             "node_id":  "ns=1;s=Pressure",
+                                             "value":  3.3959071872580333,
+                                             "status":  "The operation succeeded. StatusGood (0x0)",
+                                             "timestamp":  "2026-06-05T16:08:49.2441902+08:00"
+                                         },
+                                         {
+                                             "subscription_id":  "323270f7-37a2-48ad-bff2-703fe2129c68",
+                                             "node_id":  "ns=1;s=Temperature",
+                                             "value":  55.5,
+                                             "status":  "The operation succeeded. StatusGood (0x0)",
+                                             "timestamp":  "2026-06-05T16:08:49.2441902+08:00"
+                                         },
+                                         {
+                                             "subscription_id":  "323270f7-37a2-48ad-bff2-703fe2129c68",
+                                             "node_id":  "ns=1;s=Temperature",
+                                             "value":  55.5,
+                                             "status":  "The operation succeeded. StatusGood (0x0)",
+                                             "timestamp":  "2026-06-05T16:08:50.2444377+08:00"
+                                         },
+                                         {
+                                             "subscription_id":  "323270f7-37a2-48ad-bff2-703fe2129c68",
+                                             "node_id":  "ns=1;s=Pressure",
+                                             "value":  3.1188227819837104,
+                                             "status":  "The operation succeeded. StatusGood (0x0)",
+                                             "timestamp":  "2026-06-05T16:08:50.2444377+08:00"
+                                         },
+                                         {
+                                             "subscription_id":  "323270f7-37a2-48ad-bff2-703fe2129c68",
+                                             "node_id":  "ns=1;s=Temperature",
+                                             "value":  55.5,
+                                             "status":  "The operation succeeded. StatusGood (0x0)",
+                                             "timestamp":  "2026-06-05T16:08:51.2496013+08:00"
+                                         },
+                                         {
+                                             "subscription_id":  "323270f7-37a2-48ad-bff2-703fe2129c68",
+                                             "node_id":  "ns=1;s=Pressure",
+                                             "value":  2.8045539272922797,
+                                             "status":  "The operation succeeded. StatusGood (0x0)",
+                                             "timestamp":  "2026-06-05T16:08:51.2496013+08:00"
+                                         },
+                                         {
+                                             "subscription_id":  "323270f7-37a2-48ad-bff2-703fe2129c68",
+                                             "node_id":  "ns=1;s=Temperature",
+                                             "value":  55.5,
+                                             "status":  "The operation succeeded. StatusGood (0x0)",
+                                             "timestamp":  "2026-06-05T16:08:52.2435601+08:00"
+                                         },
+                                         {
+                                             "subscription_id":  "323270f7-37a2-48ad-bff2-703fe2129c68",
+                                             "node_id":  "ns=1;s=Pressure",
+                                             "value":  4.6897582416021955,
+                                             "status":  "The operation succeeded. StatusGood (0x0)",
+                                             "timestamp":  "2026-06-05T16:08:52.2435601+08:00"
+                                         }
+                                     ],
+                        "ok":  true
+                    },
+    "disconnect":  {
+                       "response":  {
+                                        "id":  4,
+                                        "name":  "Local Sim",
+                                        "protocol":  "opcua",
+                                        "address":  "opc.tcp://127.0.0.1:4840",
+                                        "config":  "",
+                                        "status":  "disconnected",
+                                        "description":  "OPC UA test",
+                                        "created_at":  "2026-06-05T16:08:48.2026528+08:00",
+                                        "updated_at":  "2026-06-05T16:08:52.2927304+08:00"
+                                    },
+                       "ok":  true
+                   },
+    "sim_stop":  {
+                     "response":  {
+                                      "status":  "stopped",
+                                      "type":  "opcua"
+                                  },
+                     "ok":  true
+                 }
+}

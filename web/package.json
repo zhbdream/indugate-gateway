@@ -1,0 +1,10 @@
+{
+  "name": "indugate-web",
+  "version": "0.1.0",
+  "private": true,
+  "description": "InduGate Web Management Panel (placeholder)",
+  "scripts": {
+    "dev": "echo 'Frontend not yet initialized. See docs for Vue 3 + Vite setup.'",
+    "build": "echo 'Frontend not yet initialized.'"
+  }
+}

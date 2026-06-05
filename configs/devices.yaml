@@ -1,0 +1,27 @@
+# Pre-configured device templates for development and testing.
+devices:
+  - name: "OPC UA Demo Server"
+    protocol: opcua
+    address: "opc.tcp://localhost:4840"
+    description: "Public OPC UA test server"
+    config:
+      security_policy: "None"
+      security_mode: "None"
+
+  - name: "Modbus TCP Demo"
+    protocol: modbus
+    address: "127.0.0.1:502"
+    description: "Local Modbus TCP slave"
+    config:
+      unit_id: 1
+      timeout_ms: 3000
+
+  - name: "MQTT Demo Broker"
+    protocol: mqtt
+    address: "tcp://localhost:1883"
+    description: "Local MQTT broker"
+    config:
+      client_id: "indugate-gateway"
+      qos: 1
+      topics:
+        - "factory/+/telemetry"
