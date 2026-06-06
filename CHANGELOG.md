@@ -2,6 +2,23 @@
 
 All notable changes to InduGate are documented in this file.
 
+## [0.7.0] - 2026-06-05
+
+### Added
+- Public architecture doc (`docs/architecture.md`) and docs index (`docs/README.md`)
+- Runnable MCP Python client example (`examples/mcp-client/mcp_tools.py`)
+- Viewer role support for MCP JSON-RPC endpoints (read-only tools)
+
+### Changed
+- Swagger/OpenAPI spec updated to v0.7.0 (auth, users, alerts, audit paths)
+- Full Docker stack now wires InfluxDB env vars to Gateway by default
+- Web UI: BACnet protocol label; API token sets admin role in localStorage for UI permissions
+
+### Fixed
+- RBAC no longer blocks viewer `POST /mcp/message` (MCP requires POST)
+- MCP `write_data` blocked for viewer role at tool layer
+- OPC UA simulator node registration and startup deadlock (from v0.6.x)
+
 ## [0.6.1] - 2026-06-05
 
 ### Changed

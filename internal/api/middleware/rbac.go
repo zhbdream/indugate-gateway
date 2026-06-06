@@ -57,6 +57,18 @@ func allowedRole(role model.UserRole, method, path string) bool {
 		return false
 	}
 
+	// MCP uses POST for JSON-RPC; viewers need read-only tool access.
+	if strings.HasPrefix(path, "/mcp") {
+		switch role {
+		case model.RoleOperator:
+			return true
+		case model.RoleViewer:
+			return method == http.MethodGet || method == http.MethodHead || method == http.MethodOptions || method == http.MethodPost
+		default:
+			return false
+		}
+	}
+
 	switch role {
 	case model.RoleOperator:
 		return true

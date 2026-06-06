@@ -43,10 +43,37 @@ const openAPISpec = `{
   "info": {
     "title": "InduGate API",
     "description": "Industrial Agent Protocol Gateway REST API",
-    "version": "0.1.0"
+    "version": "0.7.0"
   },
   "servers": [{"url": "/api/v1"}],
+  "tags": [
+    {"name": "Auth"},
+    {"name": "Users"},
+    {"name": "Devices"},
+    {"name": "Data"},
+    {"name": "Alerts"},
+    {"name": "Dashboard"},
+    {"name": "Audit"},
+    {"name": "Simulators"}
+  ],
   "paths": {
+    "/auth/config": {
+      "get": {"summary": "Auth configuration", "tags": ["Auth"], "responses": {"200": {"description": "OK"}}}
+    },
+    "/auth/login": {
+      "post": {"summary": "Login with username/password", "tags": ["Auth"], "responses": {"200": {"description": "OK"}}}
+    },
+    "/auth/me": {
+      "get": {"summary": "Current user profile", "tags": ["Auth"], "responses": {"200": {"description": "OK"}}}
+    },
+    "/users": {
+      "get": {"summary": "List users (admin)", "tags": ["Users"], "responses": {"200": {"description": "OK"}}},
+      "post": {"summary": "Create user (admin)", "tags": ["Users"], "responses": {"201": {"description": "Created"}}}
+    },
+    "/users/{id}": {
+      "put": {"summary": "Update user (admin)", "tags": ["Users"], "parameters": [{"name": "id", "in": "path", "required": true, "schema": {"type": "integer"}}], "responses": {"200": {"description": "OK"}}},
+      "delete": {"summary": "Delete user (admin)", "tags": ["Users"], "parameters": [{"name": "id", "in": "path", "required": true, "schema": {"type": "integer"}}], "responses": {"200": {"description": "OK"}}}
+    },
     "/devices": {
       "get": {"summary": "List devices", "tags": ["Devices"], "responses": {"200": {"description": "OK"}}},
       "post": {"summary": "Create device", "tags": ["Devices"], "responses": {"201": {"description": "Created"}}}
@@ -82,6 +109,19 @@ const openAPISpec = `{
     },
     "/simulators": {
       "get": {"summary": "List simulators", "tags": ["Simulators"], "responses": {"200": {"description": "OK"}}}
+    },
+    "/alerts/rules": {
+      "get": {"summary": "List alert rules", "tags": ["Alerts"], "responses": {"200": {"description": "OK"}}},
+      "post": {"summary": "Create alert rule", "tags": ["Alerts"], "responses": {"201": {"description": "Created"}}}
+    },
+    "/alerts/events": {
+      "get": {"summary": "List alert events", "tags": ["Alerts"], "responses": {"200": {"description": "OK"}}}
+    },
+    "/dashboard/stats": {
+      "get": {"summary": "Dashboard statistics", "tags": ["Dashboard"], "responses": {"200": {"description": "OK"}}}
+    },
+    "/audit/logs": {
+      "get": {"summary": "Query audit logs (admin)", "tags": ["Audit"], "responses": {"200": {"description": "OK"}}}
     },
     "/simulators/{type}/start": {
       "post": {"summary": "Start simulator", "tags": ["Simulators"], "parameters": [{"name": "type", "in": "path", "required": true, "schema": {"type": "string", "enum": ["opcua", "modbus", "mqtt"]}}], "responses": {"200": {"description": "OK"}}}

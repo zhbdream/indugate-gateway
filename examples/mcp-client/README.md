@@ -1,56 +1,19 @@
 # MCP Client Example
 
-InduGate 内置 MCP Server，支持标准 JSON-RPC 2.0 协议。
-
-## 端点
-
-- 服务发现: `GET /mcp/.well-known/mcp.json`
-- JSON-RPC: `POST /mcp/message`
-
-## 快速测试
+## Python（推荐）
 
 ```bash
-# 初始化
-curl -X POST http://localhost:8080/mcp/message \
-  -H "Content-Type: application/json" \
-  -d '{
-    "jsonrpc": "2.0",
-    "id": 1,
-    "method": "initialize",
-    "params": {
-      "protocolVersion": "2024-11-05",
-      "capabilities": {},
-      "clientInfo": {"name": "example", "version": "1.0.0"}
-    }
-  }'
-
-# 列出工具
-curl -X POST http://localhost:8080/mcp/message \
-  -H "Content-Type: application/json" \
-  -d '{"jsonrpc":"2.0","id":2,"method":"tools/list"}'
-
-# 列出设备
-curl -X POST http://localhost:8080/mcp/message \
-  -H "Content-Type: application/json" \
-  -d '{
-    "jsonrpc": "2.0",
-    "id": 3,
-    "method": "tools/call",
-    "params": {
-      "name": "list_devices",
-      "arguments": {}
-    }
-  }'
+# 确保 Gateway 已启动且设备已连接
+python examples/mcp-client/mcp_tools.py --list-tools
+python examples/mcp-client/mcp_tools.py --read 1 "ns=1;s=Temperature"
 ```
 
-## Cursor / Claude Desktop 配置
+## curl
 
-```json
-{
-  "mcpServers": {
-    "indugate": {
-      "url": "http://localhost:8080/mcp/message"
-    }
-  }
-}
+```bash
+curl -X POST http://localhost:8080/mcp/message \
+  -H "Content-Type: application/json" \
+  -d '{"jsonrpc":"2.0","id":1,"method":"tools/list"}'
 ```
+
+See [docs/opcua-test-guide.md](../../docs/opcua-test-guide.md) for full workflow.

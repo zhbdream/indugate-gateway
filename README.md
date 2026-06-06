@@ -2,23 +2,25 @@
 
 > AI 智能体与工业设备之间的翻译官 — 让任何 Agent 都能通过标准 MCP 协议对接真实工业设备
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Docker](https://img.shields.io/badge/docker-compose-up-blue)](docker-compose.yml)
 [![Go](https://img.shields.io/badge/Go-1.23+-00ADD8)](go.mod)
 [![Vue](https://img.shields.io/badge/Vue-3-4FC08D)](web/)
+[![Release](https://img.shields.io/badge/release-v0.7.0-green)](CHANGELOG.md)
 
 ## 功能特性
 
-- **多协议支持**：OPC UA、Modbus TCP、MQTT（S7 规划中）
+- **多协议支持**：OPC UA、Modbus TCP、MQTT、Siemens S7、BACnet/IP
 - **MCP 协议接入**：标准 Model Context Protocol，Agent 开箱即用
 - **设备模拟器**：内置 OPC UA / Modbus / MQTT 模拟器，零硬件依赖
-- **Web 管理面板**：设备管理、连接控制、实时数据、模拟器管理
-- **一键部署**：Docker Compose 一条命令启动完整系统
+- **Web 管理面板**：设备、告警、仪表盘、用户权限、审计日志
+- **一键部署**：`docker compose up` 启动完整系统
 
 ## 快速开始
 
 ```bash
-git clone https://github.com/your-org/InduGate.git
-cd InduGate
+git clone https://gitee.com/zhbdream/indugate-gateway.git
+cd indugate-gateway
 docker compose up -d --build
 ```
 
@@ -127,6 +129,8 @@ InduGate/
 ├── docker-compose.yml     # 一键启动（推荐）
 └── docs/                  # 文档
 ```
+
+详细说明见 [docs/architecture.md](docs/architecture.md) · [文档索引](docs/README.md)
 
 ## Docker 部署
 

@@ -66,3 +66,17 @@ func TestToolReadDataAccessDenied(t *testing.T) {
 		t.Fatal("expected access denied error")
 	}
 }
+
+func TestViewerToolPermissions(t *testing.T) {
+	ctx := WithRole(t.Context(), model.RoleViewer)
+	if err := canCallTool(ctx, "read_data"); err != nil {
+		t.Fatalf("viewer should read: %v", err)
+	}
+	if err := canCallTool(ctx, "write_data"); err == nil {
+		t.Fatal("viewer should not write")
+	}
+	tools := toolsForRole(model.RoleViewer, []Tool{{Name: "read_data"}, {Name: "write_data"}})
+	if len(tools) != 1 || tools[0].Name != "read_data" {
+		t.Fatalf("unexpected viewer tools: %+v", tools)
+	}
+}

@@ -12,6 +12,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/indugate/gateway/internal/config"
 	"github.com/indugate/gateway/internal/mcp"
+	"github.com/indugate/gateway/internal/model"
 	"github.com/indugate/gateway/internal/service"
 )
 
@@ -38,7 +39,13 @@ func (h *MCPHandler) mcpContext(c *gin.Context) context.Context {
 	if err != nil {
 		return ctx
 	}
-	return mcp.WithDeviceFilter(ctx, filter)
+	ctx = mcp.WithDeviceFilter(ctx, filter)
+	if v, ok := c.Get("role"); ok {
+		if role, ok := v.(model.UserRole); ok {
+			ctx = mcp.WithRole(ctx, role)
+		}
+	}
+	return ctx
 }
 
 func (h *MCPHandler) Discovery(c *gin.Context) {

@@ -19,6 +19,11 @@ services:
       INDUGATE_SIMULATOR_OPCUA_AUTO_START: "true"
       INDUGATE_SIMULATOR_MODBUS_AUTO_START: "true"
       INDUGATE_SIMULATOR_MQTT_AUTO_START: "true"
+      INDUGATE_INFLUXDB_ENABLED: "true"
+      INDUGATE_INFLUXDB_URL: "http://influxdb:8086"
+      INDUGATE_INFLUXDB_TOKEN: "indugate-dev-token"
+      INDUGATE_INFLUXDB_ORG: "indugate"
+      INDUGATE_INFLUXDB_BUCKET: "telemetry"
     volumes:
       - gateway_data:/app/data
     depends_on:

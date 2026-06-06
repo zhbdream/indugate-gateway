@@ -7,7 +7,15 @@ import (
 	"github.com/indugate/gateway/internal/model"
 )
 
+var viewerReadOnlyTools = map[string]struct{}{
+	"list_devices":   {},
+	"read_data":      {},
+	"subscribe_data": {},
+	"get_device_info": {},
+}
+
 type deviceFilterKey struct{}
+type roleKey struct{}
 
 func WithDeviceFilter(ctx context.Context, filter *[]uint) context.Context {
 	return context.WithValue(ctx, deviceFilterKey{}, filter)
@@ -58,4 +66,40 @@ func canAccessDevice(deviceID uint, filter *[]uint) bool {
 
 func deviceAccessError(deviceID uint) error {
 	return fmt.Errorf("device access denied: %d", deviceID)
+}
+
+func WithRole(ctx context.Context, role model.UserRole) context.Context {
+	return context.WithValue(ctx, roleKey{}, role)
+}
+
+func RoleFromContext(ctx context.Context) model.UserRole {
+	if ctx == nil {
+		return ""
+	}
+	role, _ := ctx.Value(roleKey{}).(model.UserRole)
+	return role
+}
+
+func canCallTool(ctx context.Context, toolName string) error {
+	role := RoleFromContext(ctx)
+	if role != model.RoleViewer {
+		return nil
+	}
+	if _, ok := viewerReadOnlyTools[toolName]; ok {
+		return nil
+	}
+	return fmt.Errorf("tool %q is not allowed for viewer role", toolName)
+}
+
+func toolsForRole(role model.UserRole, tools []Tool) []Tool {
+	if role != model.RoleViewer {
+		return tools
+	}
+	filtered := make([]Tool, 0, len(tools))
+	for _, tool := range tools {
+		if _, ok := viewerReadOnlyTools[tool.Name]; ok {
+			filtered = append(filtered, tool)
+		}
+	}
+	return filtered
 }

@@ -1,3 +1,5 @@
+// Package mcp implements the Model Context Protocol (MCP) server for InduGate.
+// It exposes industrial devices as MCP tools and resources for AI agents.
 package mcp
 
 import (
@@ -53,7 +55,7 @@ func (s *Server) Handle(ctx context.Context, req *JSONRPCRequest) (*JSONRPCRespo
 	case "ping":
 		resp = successResponse(req.ID, PingResult{})
 	case "tools/list":
-		resp = s.handleToolsList(req)
+		resp = s.handleToolsList(ctx, req)
 	case "tools/call":
 		resp = s.handleToolsCall(ctx, req)
 	case "resources/list":
@@ -113,7 +115,7 @@ func negotiateProtocolVersion(requested string) string {
 	return ProtocolVersion20241105
 }
 
-func (s *Server) handleToolsList(req *JSONRPCRequest) *JSONRPCResponse {
+func (s *Server) handleToolsList(ctx context.Context, req *JSONRPCRequest) *JSONRPCResponse {
 	var params ToolsListParams
 	if len(req.Params) > 0 {
 		_ = json.Unmarshal(req.Params, &params)
@@ -121,7 +123,7 @@ func (s *Server) handleToolsList(req *JSONRPCRequest) *JSONRPCResponse {
 	if params.Cursor != "" {
 		return successResponse(req.ID, ToolsListResult{Tools: []Tool{}})
 	}
-	return successResponse(req.ID, ToolsListResult{Tools: s.tools})
+	return successResponse(req.ID, ToolsListResult{Tools: toolsForRole(RoleFromContext(ctx), s.tools)})
 }
 
 func (s *Server) handleToolsCall(ctx context.Context, req *JSONRPCRequest) *JSONRPCResponse {
@@ -144,6 +146,9 @@ func (s *Server) handleToolsCall(ctx context.Context, req *JSONRPCRequest) *JSON
 }
 
 func (s *Server) callTool(ctx context.Context, name string, rawArgs json.RawMessage) (ToolsCallResult, error) {
+	if err := canCallTool(ctx, name); err != nil {
+		return ToolsCallResult{}, err
+	}
 	switch name {
 	case "list_devices":
 		return s.toolListDevices(ctx, rawArgs)

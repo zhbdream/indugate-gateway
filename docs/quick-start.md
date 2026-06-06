@@ -8,8 +8,8 @@
 
 ```bash
 # 克隆项目
-git clone https://github.com/your-org/InduGate.git
-cd InduGate
+git clone https://gitee.com/zhbdream/indugate-gateway.git
+cd indugate-gateway
 
 # 一条命令启动（构建镜像 + 启动服务）
 docker compose up -d --build

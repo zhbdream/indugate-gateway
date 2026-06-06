@@ -74,7 +74,7 @@ const actionId = ref<number | null>(null)
 const actionType = ref<'connect' | 'disconnect' | null>(null)
 
 function protocolLabel(p: string) {
-  return ({ opcua: 'OPC UA', modbus: 'Modbus', mqtt: 'MQTT', s7: 'S7' } as Record<string, string>)[p] || p
+  return ({ opcua: 'OPC UA', modbus: 'Modbus', mqtt: 'MQTT', s7: 'S7', bacnet: 'BACnet' } as Record<string, string>)[p] || p
 }
 
 function statusLabel(s: string) {

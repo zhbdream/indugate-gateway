@@ -10,6 +10,10 @@ export function getApiToken(): string {
 export function setApiToken(token: string) {
   if (token) {
     localStorage.setItem(TOKEN_KEY, token)
+    // Static API token is treated as admin on the backend when RBAC is enabled.
+    localStorage.setItem(USER_ROLE_KEY, 'admin')
+    localStorage.setItem(USER_NAME_KEY, 'api-token')
+    localStorage.removeItem(JWT_KEY)
   } else {
     localStorage.removeItem(TOKEN_KEY)
   }

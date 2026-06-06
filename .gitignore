@@ -45,3 +45,8 @@ web/dist/
 
 # Docker
 deployments/docker/data/
+
+# Local / internal (do not commit)
+test-output.json
+docs/internal/
+*.local.md

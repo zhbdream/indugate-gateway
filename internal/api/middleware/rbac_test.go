@@ -25,6 +25,12 @@ func TestAllowedRole(t *testing.T) {
 	if !allowedRole(model.RoleOperator, http.MethodPost, "/api/v1/devices/1/connect") {
 		t.Fatal("operator should connect devices")
 	}
+	if !allowedRole(model.RoleViewer, http.MethodPost, "/mcp/message") {
+		t.Fatal("viewer should access MCP message endpoint")
+	}
+	if allowedRole(model.RoleViewer, http.MethodPost, "/api/v1/devices/1/data/ns=1;s=Temperature") {
+		t.Fatal("viewer should not write device data via REST")
+	}
 }
 
 func TestRequireAdmin(t *testing.T) {

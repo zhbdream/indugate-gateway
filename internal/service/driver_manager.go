@@ -1,3 +1,5 @@
+// Package service contains InduGate business logic: device lifecycle, drivers,
+// alerts, history, auth helpers, and simulator orchestration.
 package service
 
 import (
