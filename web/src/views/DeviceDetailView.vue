@@ -52,6 +52,7 @@
           >
             <el-table-column prop="browse_name" label="名称" min-width="120" />
             <el-table-column prop="node_id" label="Node ID" min-width="180" show-overflow-tooltip />
+            <el-table-column prop="node_class" label="类别" width="90" />
             <el-table-column prop="data_type" label="类型" width="90" />
             <el-table-column label="可写" width="70">
               <template #default="{ row }">
@@ -156,7 +157,7 @@ const selectedNode = ref<NodeInfo | null>(null)
 const lastUpdate = ref('')
 const loading = ref(false)
 const nodesLoading = ref(false)
-const autoRefresh = ref(true)
+const autoRefresh = ref(false)
 const writeVisible = ref(false)
 const writeValue = ref('')
 const writing = ref(false)
@@ -166,6 +167,15 @@ const historyChartRef = ref<HTMLDivElement>()
 let historyChart: echarts.ECharts | null = null
 
 let refreshTimer: ReturnType<typeof setInterval> | null = null
+const unreadableNodes = new Set<string>()
+
+const simulatorNodeIDs = [
+  'ns=1;s=Temperature',
+  'ns=1;s=Pressure',
+  'ns=1;s=Flow',
+  'ns=1;s=MotorSpeed',
+  'ns=1;s=AlarmActive',
+]
 
 const displayValue = computed(() => formatValue(selectedNode.value ? values.value[selectedNode.value.node_id] : undefined))
 
@@ -193,38 +203,90 @@ async function loadNodes() {
     return
   }
   nodesLoading.value = true
+  unreadableNodes.clear()
   try {
-    nodes.value = await browseNodes(deviceId.value, { depth: 3 })
+    if (device.value.protocol === 'opcua') {
+      // Prefer built-in simulator variables (ns=1) before standard server diagnostics.
+      try {
+        const simNodes = await browseNodes(deviceId.value, { node: 'ns=1;i=85', depth: 2 })
+        const simVars = simNodes.filter((n) => n.node_class === 'Variable' || n.node_id.startsWith('ns=1;s='))
+        if (simVars.length > 0) {
+          nodes.value = simVars
+          return
+        }
+      } catch {
+        // fall through
+      }
+      const result = await browseNodes(deviceId.value, { depth: 4 })
+      const variables = result.filter((n) => n.node_class === 'Variable' && Boolean(n.data_type))
+      if (variables.length > 0) {
+        nodes.value = variables
+        return
+      }
+      nodes.value = simulatorNodeIDs.map((nodeId) => ({
+        node_id: nodeId,
+        browse_name: nodeId.replace('ns=1;s=', ''),
+        node_class: 'Variable',
+        writable: nodeId !== 'ns=1;s=AlarmActive' ? true : true,
+        data_type: 'simulator',
+      }))
+      return
+    }
+    nodes.value = await browseNodes(deviceId.value, { depth: 4 })
   } finally {
     nodesLoading.value = false
   }
 }
 
-async function readNode(nodeId: string) {
-  const result = await readData(deviceId.value, nodeId)
-  values.value[nodeId] = result.value
-  if (selectedNode.value?.node_id === nodeId) {
-    lastUpdate.value = new Date(result.timestamp).toLocaleString()
+function isReadableNode(node: NodeInfo): boolean {
+  const nonReadable = ['Object', 'ObjectType', 'Folder', 'Method', 'ReferenceType', 'DataType', 'View']
+  if (nonReadable.includes(node.node_class)) return false
+  if (unreadableNodes.has(node.node_id)) return false
+  if (node.node_class === 'Register') return true
+  if (device.value?.protocol === 'opcua') {
+    if (node.node_id.startsWith('ns=1;s=')) return true
+    return node.node_class === 'Variable' && Boolean(node.data_type)
+  }
+  if (node.node_class === 'Variable') return true
+  return Boolean(node.data_type) || !node.has_children
+}
+
+async function readNode(nodeId: string, options?: { silent?: boolean }) {
+  try {
+    const result = await readData(deviceId.value, nodeId, { silent: options?.silent })
+    values.value[nodeId] = result.value
+    if (selectedNode.value?.node_id === nodeId) {
+      lastUpdate.value = new Date(result.timestamp).toLocaleString()
+    }
+  } catch (err) {
+    unreadableNodes.add(nodeId)
+    throw err
   }
 }
 
-async function readAllNodes() {
+async function refreshNodeValues() {
   if (!nodes.value.length || device.value?.status !== 'connected') return
-  for (const node of nodes.value) {
+  const readable = nodes.value.filter(isReadableNode)
+  for (const node of readable.slice(0, 20)) {
     try {
-      await readNode(node.node_id)
+      await readNode(node.node_id, { silent: true })
     } catch {
-      // skip unreadable nodes during batch refresh
+      // marked unreadable in readNode
     }
   }
 }
 
 function onNodeSelect(row: NodeInfo | null) {
   selectedNode.value = row
-  if (row) {
-    readNode(row.node_id)
-    loadHistory()
+  if (!row) return
+  if (!isReadableNode(row)) {
+    ElMessage.info('该节点不可读，请选择 Variable 类型数据点')
+    return
   }
+  readNode(row.node_id).catch(() => {
+    ElMessage.error('读取失败')
+  })
+  loadHistory()
 }
 
 function parseHistoryValue(raw: string): number | null {
@@ -325,7 +387,7 @@ async function refreshAll() {
     await loadDevice()
     if (device.value?.status === 'connected') {
       if (!nodes.value.length) await loadNodes()
-      await readAllNodes()
+      await refreshNodeValues()
       await pollEvents()
     }
   } finally {
@@ -352,8 +414,8 @@ function setupAutoRefresh() {
   if (refreshTimer) clearInterval(refreshTimer)
   if (autoRefresh.value) {
     refreshTimer = setInterval(() => {
-      if (device.value?.status === 'connected') {
-        readAllNodes()
+      if (device.value?.status === 'connected' && selectedNode.value) {
+        readNode(selectedNode.value.node_id, { silent: true }).catch(() => {})
         pollEvents()
       }
     }, 2000)

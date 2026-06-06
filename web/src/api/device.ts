@@ -33,9 +33,10 @@ export function browseNodes(id: number, params?: { node?: string; depth?: number
   return http.get<unknown, NodeInfo[]>(`/api/v1/devices/${id}/nodes`, { params })
 }
 
-export function readData(id: number, nodeId: string) {
+export function readData(id: number, nodeId: string, options?: { silent?: boolean }) {
   return http.get<unknown, DataValue>(`/api/v1/devices/${id}/data/${encodeURIComponent(nodeId)}`, {
     params: { node: nodeId },
+    silent: options?.silent,
   })
 }
 

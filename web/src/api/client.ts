@@ -21,16 +21,21 @@ http.interceptors.response.use(
     const body = response.data as ApiResponse<unknown>
     if (body && typeof body.code === 'number') {
       if (body.code !== 0) {
-        ElMessage.error(body.message || '请求失败')
+        if (!response.config.silent) {
+          ElMessage.error(body.message || '请求失败')
+        }
         return Promise.reject(new Error(body.message))
       }
-      return { ...response, data: body.data }
+      // Return unwrapped payload so callers get T, not AxiosResponse<T>.
+      return body.data
     }
-    return response
+    return response.data
   },
   (error) => {
-    const message = error.response?.data?.message || error.message || '网络错误'
-    ElMessage.error(message)
+    if (!error.config?.silent) {
+      const message = error.response?.data?.message || error.message || '网络错误'
+      ElMessage.error(message)
+    }
     return Promise.reject(error)
   }
 )

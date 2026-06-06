@@ -25,6 +25,5 @@ export async function listAuditLogs(params?: {
   limit?: number
   offset?: number
 }) {
-  const { data } = await http.get<AuditLogListResult>('/api/v1/audit/logs', { params })
-  return data as unknown as AuditLogListResult
+  return http.get<unknown, AuditLogListResult>('/api/v1/audit/logs', { params })
 }

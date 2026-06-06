@@ -224,6 +224,9 @@ func handleDriverError(c *gin.Context, err error) {
 		response.NotFound(c, err.Error())
 	case errors.Is(err, mqttdriver.ErrTopicNotFound):
 		response.NotFound(c, err.Error())
+	case strings.Contains(err.Error(), "read failed:"),
+		strings.Contains(err.Error(), "write failed:"):
+		response.BadRequest(c, err.Error())
 	default:
 		response.InternalError(c, err.Error())
 	}

@@ -16,6 +16,9 @@ All notable changes to InduGate are documented in this file.
 
 ### Fixed
 - Gin route registration panic on startup (`/data/*nodeId` conflict with `/data/history`)
+- Web UI: axios response unwrapping (device/alerts list no longer stuck loading)
+- Web UI: OPC UA device detail only reads Variable nodes; prefer simulator `ns=1` data points
+- Device read failures return HTTP 400 instead of 500
 - RBAC no longer blocks viewer `POST /mcp/message` (MCP requires POST)
 - MCP `write_data` blocked for viewer role at tool layer
 - OPC UA simulator node registration and startup deadlock (from v0.6.x)
