@@ -42,7 +42,8 @@ docker compose down
 ### 前置条件
 
 - Go 1.24+
-- Node.js 18+
+- Node.js **18+**（当前前端使用 Vite 6，Node 16 会报错 `crypto.getRandomValues is not a function`）
+- Windows 用户：**无需安装 make**，见下方 PowerShell 命令
 
 ### 1. 启动后端
 
@@ -74,6 +75,22 @@ cd web && npm install && npm run build && cd ..
 make run
 # 访问 http://localhost:8080
 ```
+
+### Windows PowerShell 等价命令
+
+```powershell
+# 后端
+go mod download
+if (-not (Test-Path data)) { mkdir data }
+go run ./cmd/gateway
+
+# 前端（另开终端，node -v 须 >= 18）
+cd web
+npm install
+npm run dev
+```
+
+也可使用：`.\scripts\dev.ps1 backend` / `.\scripts\dev.ps1 frontend`
 
 ---
 

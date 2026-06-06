@@ -60,13 +60,38 @@ docker compose up -d --build
 
 ### 本地开发
 
-```bash
-# 终端 1：后端
-make deps && mkdir -p data && make run
+**前置**：Go 1.24+、Node.js **18+**（Vite 6 不支持 Node 16）
 
-# 终端 2：前端
-cd web && npm install && npm run dev
-# 访问 http://localhost:3000
+> Windows 默认没有 `make`，请用下方 PowerShell 命令，或直接用 **Docker 一键启动**（最省事）。
+
+**Linux / macOS（有 make）：**
+
+```bash
+make deps && mkdir -p data && make run          # 终端 1：后端 :8080
+cd web && npm install && npm run dev            # 终端 2：前端 :3000
+```
+
+**Windows PowerShell：**
+
+```powershell
+# 终端 1：后端
+go mod download
+if (-not (Test-Path data)) { mkdir data }
+go run ./cmd/gateway
+# 或: .\scripts\dev.ps1 backend
+
+# 终端 2：前端（先确认 node -v >= 18）
+cd web
+npm install
+npm run dev
+# 或: .\scripts\dev.ps1 frontend
+```
+
+**不想配环境？直接 Docker：**
+
+```powershell
+docker compose up -d --build
+# 访问 http://localhost:8080（前后端已打包）
 ```
 
 ## MCP 工具
