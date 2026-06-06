@@ -62,6 +62,8 @@ Windows 用户若 `go` 不在 PATH，请使用 Go 安装目录下的完整路径
 
 ## 发布维护（维护者）
 
-- 版本记录写入 `CHANGELOG.md`
-- GitHub Release 正文可参考 `docs/RELEASE-NOTES-v0.7.0.md` 模板
-- 发布前确认 `configs/` 无真实密钥，默认 `auth.enabled: false`
+1. 更新 `CHANGELOG.md`（及可选 `docs/RELEASE-NOTES-vX.Y.Z.md`）
+2. `git commit` → 推送到码云公开仓与私有主仓
+3. `git tag -a vX.Y.Z` → 推送标签到各远程
+4. 在码云创建发行版（正文可参考 `docs/RELEASE-NOTES-v0.7.0.md` 模板）
+5. 发布前确认 `configs/` 无真实密钥，默认 `auth.enabled: false`

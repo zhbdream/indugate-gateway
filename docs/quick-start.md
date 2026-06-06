@@ -41,7 +41,7 @@ docker compose down
 
 ### 前置条件
 
-- Go 1.23+
+- Go 1.24+
 - Node.js 18+
 
 ### 1. 启动后端

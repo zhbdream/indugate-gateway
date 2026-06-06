@@ -2,19 +2,21 @@
 
 > AI 智能体与工业设备之间的翻译官 — 让任何 Agent 都能通过标准 MCP 协议对接真实工业设备
 
+[![Gitee](https://img.shields.io/badge/Gitee-zhbdream%2Findugate--gateway-C71D23)](https://gitee.com/zhbdream/indugate-gateway)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Docker](https://img.shields.io/badge/docker-compose-up-blue)](docker-compose.yml)
-[![Go](https://img.shields.io/badge/Go-1.23+-00ADD8)](go.mod)
+[![Go](https://img.shields.io/badge/Go-1.24+-00ADD8)](go.mod)
 [![Vue](https://img.shields.io/badge/Vue-3-4FC08D)](web/)
 [![Release](https://img.shields.io/badge/release-v0.7.0-green)](CHANGELOG.md)
 
 ## 功能特性
 
 - **多协议支持**：OPC UA、Modbus TCP、MQTT、Siemens S7、BACnet/IP
-- **MCP 协议接入**：标准 Model Context Protocol，Agent 开箱即用
-- **设备模拟器**：内置 OPC UA / Modbus / MQTT 模拟器，零硬件依赖
-- **Web 管理面板**：设备、告警、仪表盘、用户权限、审计日志
-- **一键部署**：`docker compose up` 启动完整系统
+- **MCP 协议接入**：标准 Model Context Protocol，支持 HTTP + SSE，Agent 开箱即用
+- **设备模拟器**：内置 OPC UA / Modbus / MQTT 模拟器，Docker 镜像自动启动，零硬件依赖
+- **Web 管理面板**：仪表盘、设备、告警、用户权限、操作审计、模拟器控制
+- **可选能力**：历史数据、InfluxDB、Prometheus 指标、JWT/RBAC、设备级 ACL、操作审计
+- **一键部署**：`docker compose up` 启动 Gateway + Web UI + SQLite
 
 ## 快速开始
 
@@ -26,7 +28,7 @@ docker compose up -d --build
 
 打开浏览器访问 **http://localhost:8080**
 
-详细步骤见 [快速开始文档](docs/quick-start.md)
+详细步骤见 [快速开始文档](docs/quick-start.md) · [架构说明](docs/architecture.md)
 
 ## 访问地址
 
@@ -36,15 +38,25 @@ docker compose up -d --build
 | REST API | http://localhost:8080/api/v1 |
 | Swagger API 文档 | http://localhost:8080/swagger/index.html |
 | 健康检查 | http://localhost:8080/health |
+| Prometheus 指标 | http://localhost:8080/metrics（需 `metrics.enabled: true`） |
 | MCP 服务发现 | http://localhost:8080/mcp/.well-known/mcp.json |
+| MCP JSON-RPC | `POST /mcp/message` |
+| MCP SSE | `GET/POST /mcp/sse` |
 
 ## Web 管理面板
 
-基于 Vue 3 + Element Plus 构建，提供：
+基于 Vue 3 + Element Plus，路由与功能：
 
-- **设备管理** — 增删改查、连接/断开
-- **数据监控** — 浏览节点、实时读取、写入、订阅
-- **模拟器控制** — 一键启停 OPC UA / Modbus / MQTT 模拟器
+| 页面 | 路径 | 说明 |
+|------|------|------|
+| 仪表盘 | `/dashboard` | 设备/告警概览统计 |
+| 设备管理 | `/devices` | 增删改查、连接/断开 |
+| 设备详情 | `/devices/:id` | 浏览节点、读写、订阅 |
+| 告警管理 | `/alerts` | 告警规则与事件确认 |
+| 用户管理 | `/users` | 用户与设备权限（admin） |
+| 操作审计 | `/audit` | 写操作审计日志（admin） |
+| 模拟器 | `/simulators` | OPC UA / Modbus / MQTT 启停 |
+| 登录 | `/login` | JWT 登录（`auth.enabled: true` 时） |
 
 ### 本地开发
 
@@ -61,76 +73,108 @@ cd web && npm install && npm run dev
 
 | 工具 | 说明 |
 |------|------|
-| `list_devices` | 列出所有设备 |
+| `list_devices` | 列出设备（可按协议/状态过滤） |
 | `get_device_info` | 获取设备详情 |
 | `read_data` | 读取数据点 |
 | `write_data` | 写入数据点 |
-| `subscribe_data` | 订阅数据变化 |
+| `subscribe_data` | 创建订阅（事件通过 REST 轮询） |
 
 ```bash
+# 列出 MCP 工具
 curl -X POST http://localhost:8080/mcp/message \
   -H "Content-Type: application/json" \
   -d '{"jsonrpc":"2.0","id":1,"method":"tools/list"}'
+
+# Python 示例客户端
+python examples/mcp-client/mcp_tools.py --list-tools
 ```
+
+更多示例见 [examples/mcp-client/](examples/mcp-client/)。
 
 ## API 概览
 
 ```
-# 设备管理
+# 认证
+GET             /api/v1/auth/config
+POST            /api/v1/auth/login
+GET             /api/v1/auth/me
+
+# 用户（admin）
+GET/POST        /api/v1/users
+PUT/DELETE      /api/v1/users/{id}
+PUT             /api/v1/users/{id}/password
+GET/PUT         /api/v1/users/{id}/devices
+
+# 设备
 GET/POST        /api/v1/devices
 GET/PUT/DELETE  /api/v1/devices/{id}
 POST            /api/v1/devices/{id}/connect
 POST            /api/v1/devices/{id}/disconnect
 
-# 数据操作
+# 数据与订阅
 GET             /api/v1/devices/{id}/nodes
 GET             /api/v1/devices/{id}/data/{nodeId}
 POST            /api/v1/devices/{id}/data/{nodeId}
 POST            /api/v1/devices/{id}/subscribe
+GET             /api/v1/devices/{id}/subscriptions
+GET             /api/v1/devices/{id}/subscriptions/{subId}/events
+DELETE          /api/v1/devices/{id}/subscriptions/{subId}
 
 # 历史数据
 GET             /api/v1/devices/{id}/data/history
+GET             /api/v1/devices/{id}/data/history/export
 
 # 模拟器
 GET             /api/v1/simulators
 POST            /api/v1/simulators/{type}/start
 POST            /api/v1/simulators/{type}/stop
+PUT             /api/v1/simulators/{type}/config
 
-# 告警与仪表盘
+# 告警
 GET/POST        /api/v1/alerts/rules
+PUT/DELETE      /api/v1/alerts/rules/{id}
 GET             /api/v1/alerts/events
 POST            /api/v1/alerts/events/{id}/acknowledge
+
+# 仪表盘与审计
 GET             /api/v1/dashboard/stats
+GET             /api/v1/audit/logs
 ```
+
+完整 OpenAPI 见 `/swagger/index.html`。
 
 ## 技术栈
 
 | 组件 | 选型 |
 |------|------|
-| 后端 | Go 1.23+ / Gin / GORM / Zap / Viper |
+| 后端 | Go 1.24+ / Gin / GORM / Zap / Viper |
 | 前端 | Vue 3 / Vite / Element Plus / TypeScript |
 | 数据库 | SQLite（默认）/ PostgreSQL（生产） |
+| 时序（可选） | InfluxDB |
 | 部署 | Docker / Docker Compose |
 
 ## 项目结构
 
 ```
-InduGate/
+indugate-gateway/
 ├── cmd/gateway/           # 应用入口
 ├── internal/
-│   ├── api/               # HTTP API + 静态文件服务
-│   ├── mcp/               # MCP Server
-│   ├── protocol/          # 协议驱动
-│   ├── simulator/         # 设备模拟器
-│   └── service/           # 业务服务
+│   ├── api/               # HTTP 路由、Handler、中间件
+│   ├── mcp/               # MCP Server（Tools / SSE）
+│   ├── protocol/          # 协议驱动（opcua/modbus/mqtt/s7/bacnet）
+│   ├── simulator/         # 内置模拟器
+│   ├── service/           # 业务服务
+│   ├── model/             # 数据模型
+│   ├── config/            # 配置加载
+│   ├── storage/           # 数据库
+│   └── metrics/           # Prometheus
 ├── web/                   # Vue 3 前端
 ├── configs/               # 配置文件
-├── deployments/docker/    # Docker 构建文件
+├── examples/              # MCP / REST 集成示例
+├── deployments/           # Docker、Grafana 等
 ├── docker-compose.yml     # 一键启动（推荐）
 └── docs/                  # 文档
 ```
-
-详细说明见 [docs/architecture.md](docs/architecture.md) · [文档索引](docs/README.md)
 
 ## Docker 部署
 
@@ -142,7 +186,7 @@ docker compose logs -f          # 日志
 docker compose down             # 停止
 ```
 
-包含：Gateway + Web UI + SQLite + 内置模拟器
+包含：Gateway + Web UI + SQLite；镜像通过环境变量**自动启动** OPC UA / Modbus / MQTT 模拟器。
 
 ### 完整栈（PostgreSQL + InfluxDB + Mosquitto）
 
@@ -152,14 +196,13 @@ docker compose -f deployments/docker/docker-compose.yml up -d --build
 
 ## 配置
 
-主配置文件：`configs/config.yaml`
-
-环境变量前缀 `INDUGATE_`：
+主配置文件：`configs/config.yaml`，环境变量前缀 `INDUGATE_`：
 
 ```bash
 export INDUGATE_SERVER_PORT=9090
 export INDUGATE_DATABASE_DRIVER=sqlite
 export INDUGATE_SIMULATOR_MODBUS_AUTO_START=true
+export INDUGATE_INFLUXDB_ENABLED=true
 ```
 
 ### 告警通知
@@ -172,41 +215,39 @@ alerts:
   mqtt_topic: "indugate/alerts"
 ```
 
-### 历史数据保留
+### 历史数据
 
 ```yaml
 history:
-  retention_days: 30          # 超过 30 天的 SQLite 历史自动清理
+  retention_days: 30
   cleanup_interval_hours: 24
 ```
 
-### API 认证（可选）
-
-生产环境可启用 Bearer Token 保护 `/api/v1` 与 `/mcp`：
+### InfluxDB（可选）
 
 ```yaml
-auth:
+influxdb:
   enabled: true
-  api_token: "your-secret-token"
+  url: "http://localhost:8086"
+  org: "indugate"
+  bucket: "telemetry"
 ```
 
-请求头：`Authorization: Bearer your-secret-token`
-
-Web 面板右上角 **API Token** 可配置静态 Token；JWT 登录使用 `/login` 页面。
-
-### JWT 登录
+### API 认证（可选，默认关闭）
 
 ```yaml
 auth:
   enabled: true
+  api_token: "your-secret-token"   # 静态 Bearer Token
   jwt_secret: "change-me-in-production"
-  jwt_expire_hours: 24
   default_admin_user: "admin"
   default_admin_password: "admin123"
 ```
 
-- `POST /api/v1/auth/login` — 获取 JWT
-- `GET /api/v1/auth/me` — 当前用户信息
+- `POST /api/v1/auth/login` — JWT 登录
+- 请求头：`Authorization: Bearer <token>`
+
+Web 面板右上角 **API Token** 可配置静态 Token；启用 JWT 后使用 `/login` 页面。
 
 ### RBAC 角色
 
@@ -214,17 +255,16 @@ auth:
 |------|------|
 | admin | 全部 API + 用户管理 |
 | operator | 设备/数据/告警/模拟器读写 |
-| viewer | 只读 GET 请求 |
+| viewer | REST 只读 GET；MCP 仅只读工具（`list_devices` / `read_data` 等） |
 
 ### 设备级权限
 
 ```yaml
 auth:
-  enabled: true
   device_acl_enabled: true
 ```
 
-启用后，非 admin 用户仅能访问被分配的设备（`PUT /api/v1/users/:id/devices`）。Web 用户管理页可配置。
+非 admin 用户仅能访问被分配的设备（`PUT /api/v1/users/:id/devices`）。
 
 BACnet 设备可启用 COV 订阅：
 
@@ -239,13 +279,9 @@ metrics:
   enabled: true
 ```
 
-访问 `GET /metrics` 获取 `indugate_devices_total`、`indugate_active_alerts` 等指标。
-
-Grafana 仪表盘模板见 `deployments/grafana/`。
+`GET /metrics` 提供 `indugate_devices_total`、`indugate_active_alerts` 等指标。Grafana 模板见 `deployments/grafana/`。
 
 ### 操作审计
-
-启用认证后自动记录写操作（`audit.enabled`，默认 true）：
 
 ```yaml
 audit:
@@ -253,8 +289,7 @@ audit:
   retention_days: 90
 ```
 
-- `GET /api/v1/audit/logs` — 查询审计日志（admin）
-- Web 面板 `/audit` — 操作审计页
+启用 `auth.enabled` 后记录写操作；`GET /api/v1/audit/logs`（admin）或 Web `/audit`。
 
 ## 开发命令
 
@@ -263,8 +298,19 @@ make help        # 查看所有命令
 make build       # 编译后端
 make run         # 本地运行
 make test        # 运行测试
-make docker-up   # Docker 启动（完整栈）
+make docker-up   # Docker 完整栈
 ```
+
+## 文档与示例
+
+| 资源 | 说明 |
+|------|------|
+| [docs/quick-start.md](docs/quick-start.md) | 快速开始 |
+| [docs/architecture.md](docs/architecture.md) | 架构与目录 |
+| [docs/opcua-test-guide.md](docs/opcua-test-guide.md) | OPC UA 测试 |
+| [examples/mcp-client/](examples/mcp-client/) | MCP Python 客户端 |
+| [CONTRIBUTING.md](CONTRIBUTING.md) | 贡献指南 |
+| [CHANGELOG.md](CHANGELOG.md) | 版本记录 |
 
 ## License
 

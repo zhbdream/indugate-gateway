@@ -33,7 +33,7 @@
         </el-menu-item>
       </el-menu>
       <div class="aside-footer">
-        <el-tag size="small" type="success">v0.6.0</el-tag>
+        <el-tag size="small" type="success">v0.7.0</el-tag>
       </div>
     </el-aside>
 
