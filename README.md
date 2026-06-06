@@ -18,6 +18,16 @@
 - **可选能力**：历史数据、InfluxDB、Prometheus 指标、JWT/RBAC、设备级 ACL、操作审计
 - **一键部署**：`docker compose up` 启动 Gateway + Web UI + SQLite
 
+## 界面预览
+
+| 仪表盘 | 设备管理 |
+|--------|----------|
+| ![仪表盘](docs/images/dashboard.png) | ![设备管理](docs/images/devices.png) |
+
+| 设备实时数据 | 内置模拟器 |
+|--------------|------------|
+| ![设备详情](docs/images/device-detail.png) | ![模拟器控制](docs/images/simulators.png) |
+
 ## 快速开始
 
 ```bash

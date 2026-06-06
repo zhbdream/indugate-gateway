@@ -5,6 +5,7 @@
 | 文档 | 说明 |
 |------|------|
 | [quick-start.md](./quick-start.md) | **快速开始、三种启动方式、常见问题** |
+| [images/](./images/) | README 界面截图素材 |
 | [opcua-test-guide.md](./opcua-test-guide.md) | OPC UA 驱动与模拟器测试步骤 |
 | [architecture.md](./architecture.md) | 项目架构与目录说明 |
 
