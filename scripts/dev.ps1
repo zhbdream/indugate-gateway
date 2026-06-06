@@ -17,6 +17,8 @@ function Find-Go {
     throw "未找到 Go，请安装 Go 1.24+ 并加入 PATH"
 }
 
+$env:GOPROXY = "https://goproxy.cn,direct"
+
 switch ($Target) {
     "backend" {
         if (-not (Test-Path "data")) { New-Item -ItemType Directory -Path "data" | Out-Null }

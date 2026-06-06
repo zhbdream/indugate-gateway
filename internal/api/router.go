@@ -96,8 +96,10 @@ func NewRouter(cfg *config.Config, log *zap.Logger, db *gorm.DB, deps RouterDeps
 			devices.GET("/:id/nodes", deviceDataHandler.BrowseNodes)
 			devices.GET("/:id/data/history", historyHandler.QueryHistory)
 			devices.GET("/:id/data/history/export", historyHandler.ExportCSV)
-			devices.GET("/:id/data/*nodeId", deviceDataHandler.ReadData)
-			devices.POST("/:id/data/*nodeId", deviceDataHandler.WriteData)
+			// Use :nodeId (single segment), not *nodeId — Gin catch-all conflicts with /data/history.
+			// Node IDs containing "/" can use ?node= query param (see nodeIDFromRequest).
+			devices.GET("/:id/data/:nodeId", deviceDataHandler.ReadData)
+			devices.POST("/:id/data/:nodeId", deviceDataHandler.WriteData)
 			devices.POST("/:id/subscribe", deviceDataHandler.Subscribe)
 			devices.GET("/:id/subscriptions", deviceDataHandler.ListSubscriptions)
 			devices.GET("/:id/subscriptions/:subId/events", deviceDataHandler.PollSubscription)

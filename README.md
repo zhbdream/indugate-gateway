@@ -28,7 +28,7 @@ docker compose up -d --build
 
 打开浏览器访问 **http://localhost:8080**
 
-详细步骤见 [快速开始文档](docs/quick-start.md) · [架构说明](docs/architecture.md)
+> 详细操作步骤、Windows 本地开发、常见问题见 **[快速开始文档](docs/quick-start.md)** · [架构说明](docs/architecture.md)
 
 ## 访问地址
 
@@ -60,38 +60,41 @@ docker compose up -d --build
 
 ### 本地开发
 
-**前置**：Go 1.24+、Node.js **18+**（Vite 6 不支持 Node 16）
+> 完整步骤与排错见 **[docs/quick-start.md](docs/quick-start.md#方式二本地开发)**。
 
-> Windows 默认没有 `make`，请用下方 PowerShell 命令，或直接用 **Docker 一键启动**（最省事）。
+| 场景 | 怎么做 | 访问地址 |
+|------|--------|----------|
+| 最快体验 | `docker compose up -d --build` | :8080 |
+| 改代码 | 终端1 `go run ./cmd/gateway` + 终端2 `cd web && npm run dev` | :3000 |
+| 本地一体 | `cd web && npm run build` 后 `go run ./cmd/gateway` | :8080 |
 
-**Linux / macOS（有 make）：**
-
-```bash
-make deps && mkdir -p data && make run          # 终端 1：后端 :8080
-cd web && npm install && npm run dev            # 终端 2：前端 :3000
-```
+**前置**：Go 1.24+、Node.js **18+**（Vite 6 不支持 Node 16）。Windows 无 `make`，直接用下方命令。
 
 **Windows PowerShell：**
 
 ```powershell
+# 国内 Go 依赖（可选）
+$env:GOPROXY="https://goproxy.cn,direct"
+
 # 终端 1：后端
-go mod download
 if (-not (Test-Path data)) { mkdir data }
 go run ./cmd/gateway
-# 或: .\scripts\dev.ps1 backend
+# 成功标志: gateway server starting {"addr": "0.0.0.0:8080"}
 
-# 终端 2：前端（先确认 node -v >= 18）
-cd web
-npm install
-npm run dev
-# 或: .\scripts\dev.ps1 frontend
+# 终端 2：前端（node -v 须 >= 18）
+cd web ; npm install ; npm run dev
 ```
 
-**不想配环境？直接 Docker：**
+**说明：**
 
-```powershell
-docker compose up -d --build
-# 访问 http://localhost:8080（前后端已打包）
+- 日志出现 `web static directory not found` 表示未构建前端，**:8080 无页面但 API 可用**；开发时用 **:3000** 或先 `npm run build`
+- 8080 被占用时：`netstat -ano | findstr ":8080"` → `taskkill /PID <pid> /F`
+
+**Linux / macOS：**
+
+```bash
+make deps && mkdir -p data && make run    # 终端 1
+cd web && npm install && npm run dev      # 终端 2
 ```
 
 ## MCP 工具
@@ -138,7 +141,8 @@ POST            /api/v1/devices/{id}/disconnect
 
 # 数据与订阅
 GET             /api/v1/devices/{id}/nodes
-GET             /api/v1/devices/{id}/data/{nodeId}
+GET             /api/v1/devices/{id}/data/{nodeId}    # nodeId 需 URL 编码
+GET             /api/v1/devices/{id}/data?node={id}   # nodeId 含 / 时用查询参数
 POST            /api/v1/devices/{id}/data/{nodeId}
 POST            /api/v1/devices/{id}/subscribe
 GET             /api/v1/devices/{id}/subscriptions
@@ -318,6 +322,8 @@ audit:
 
 ## 开发命令
 
+**Linux / macOS（需安装 make）：**
+
 ```bash
 make help        # 查看所有命令
 make build       # 编译后端
@@ -326,11 +332,20 @@ make test        # 运行测试
 make docker-up   # Docker 完整栈
 ```
 
+**Windows：** 无 make，见上方「本地开发」或 [docs/quick-start.md](docs/quick-start.md)。
+
+```powershell
+go test ./...                        # 运行测试
+.\scripts\dev.ps1 backend            # 启动后端
+.\scripts\dev.ps1 frontend           # 启动前端
+docker compose up -d --build         # Docker 一键启动
+```
+
 ## 文档与示例
 
 | 资源 | 说明 |
 |------|------|
-| [docs/quick-start.md](docs/quick-start.md) | 快速开始 |
+| [docs/quick-start.md](docs/quick-start.md) | **快速开始、本地开发、常见问题** |
 | [docs/architecture.md](docs/architecture.md) | 架构与目录 |
 | [docs/opcua-test-guide.md](docs/opcua-test-guide.md) | OPC UA 测试 |
 | [examples/mcp-client/](examples/mcp-client/) | MCP Python 客户端 |
