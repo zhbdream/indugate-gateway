@@ -15,6 +15,7 @@
 - **MCP 协议接入**：标准 Model Context Protocol，支持 HTTP + SSE，Agent 开箱即用
 - **设备模拟器**：内置 OPC UA / Modbus / MQTT 模拟器，Docker 镜像自动启动，零硬件依赖
 - **Web 管理面板**：仪表盘、设备、告警、用户权限、操作审计、模拟器控制
+- **移动伴侣 (uni-app)**：现场巡检、告警确认、设备快览与读写（独立仓库 [InduGate-uniapp](https://gitee.com/zhbdream/indugate-uniapp)）
 - **可选能力**：历史数据、InfluxDB、Prometheus 指标、JWT/RBAC、设备级 ACL、操作审计
 - **一键部署**：`docker compose up` 启动 Gateway + Web UI + SQLite
 
@@ -67,6 +68,25 @@ docker compose up -d --build
 | 操作审计 | `/audit` | 写操作审计日志（admin） |
 | 模拟器 | `/simulators` | OPC UA / Modbus / MQTT 启停 |
 | 登录 | `/login` | JWT 登录（`auth.enabled: true` 时） |
+
+## 移动伴侣 (InduGate-uniapp)
+
+轻量 uni-app 客户端，与网关 REST API 对接，适合现场巡检：
+
+| 页面 | 说明 |
+|------|------|
+| 首页 | 运行概览、设备快览、最近告警 |
+| 告警 | 事件确认、规则只读 |
+| 设备 | 增删改查、连接/断开 |
+| 设备详情 | 节点读写、趋势、订阅 |
+| 设置 | 服务器、深色模式、通知 |
+
+```bash
+# 先启动网关（见上方快速开始），再克隆移动伴侣仓库并用 HBuilderX 打开
+git clone https://gitee.com/zhbdream/indugate-uniapp.git
+```
+
+详见 **[InduGate-uniapp](https://gitee.com/zhbdream/indugate-uniapp)**（[GitHub 镜像](https://github.com/zhbdream/indugate-uniapp)）· [移动端快速开始](docs/mobile-quick-start.md)。
 
 ### 本地开发
 
